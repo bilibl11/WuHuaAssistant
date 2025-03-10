@@ -62,5 +62,11 @@ image_yiwusuo_path = ".\picture\model\yiwusuo\yiwusuo.png"
 image_money_path = ".\picture\model\yiwusuo\money.png"
 image_moneyGreen_path = ".\picture\model\yiwusuo\moneyGreen.png"
 
+# 商亭
+image_shop_path = ".\picture\model\shop\shop.png"
+image_shop_gift_path = ".\picture\model\shop\gift.png"
+image_xunshi_path = ".\picture\model\shop\\xunshi.png"
+image_goBuy_path = ".\picture\model\shop\goBuy.png"
+image_shop_buy_path = ".\picture\model\shop\\buy.png"
 
 exe_path = r"H:\leidian\LDPlayer9\dnplayer.exe"

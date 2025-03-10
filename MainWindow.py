@@ -5,9 +5,10 @@ import subprocess
 import pyautogui
 from PyQt5.QtCore import Qt, QSize, QEvent, QPoint
 from PyQt5.QtGui import QPixmap, QIcon, QFont
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QToolButton, QFrame, QWidget, QComboBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QToolButton, QFrame, QWidget, QComboBox, \
+    QCheckBox
 
-from DataPack import Level
+from DataPack import Level, CompleteSetting
 from DataPack.FilePath import exe_path, image_game_exe_path, image_PeiYang_Chen_path, image_KaoHe_path
 from Scripts.CleanHP import (
     ClickYanXun, ChooseLevel, ClickSuTong,
@@ -199,7 +200,6 @@ class MainPage(QMainWindow):
         big_font.setPointSize(14)
         normal_font = QFont()
         normal_font.setPointSize(12)
-        Level.Get()
         # 左边设置界面
         self.level_label = QLabel("关卡设置:", self.setting_frame)
         self.level_label.setGeometry(15, 10, 100, 40)
@@ -233,10 +233,34 @@ class MainPage(QMainWindow):
         self.times_combobox = QComboBox(self.setting_frame)
         self.times_combobox.setGeometry(420, 160, 100, 40)
         self.times_combobox.setFont(normal_font)
-        times_option = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+        times_option = [str(i) for i in range(1, 21)] # 列表推导式
         self.times_combobox.addItems(times_option)
         self.times_combobox.setCurrentText(str(Level.level_times))
         self.times_combobox.currentIndexChanged.connect(self.times_combobox_changed)
+        # 完整运行设置
+        self.complete_label = QLabel("完整运行设置:", self.setting_frame)
+        self.complete_label.setGeometry(15, 220, 150, 40)
+        self.complete_label.setFont(big_font)
+        self.company_checkbox = QCheckBox('派遣公司', self.setting_frame)
+        self.company_checkbox.setFont(normal_font)
+        self.company_checkbox.setGeometry(15, 270, 150, 40)
+        self.company_checkbox.stateChanged.connect(self.company_checkbox_changed)
+        self.company_checkbox.setChecked(CompleteSetting.company)
+        self.yiwusuo_checkbox = QCheckBox('易物所', self.setting_frame)
+        self.yiwusuo_checkbox.setFont(normal_font)
+        self.yiwusuo_checkbox.setGeometry(155, 270, 150, 40)
+        self.yiwusuo_checkbox.stateChanged.connect(self.yiwusuo_checkbox_changed)
+        self.yiwusuo_checkbox.setChecked(CompleteSetting.yiwusuo)
+        self.cleanhp_checkbox = QCheckBox('清理体力', self.setting_frame)
+        self.cleanhp_checkbox.setFont(normal_font)
+        self.cleanhp_checkbox.setGeometry(295, 270, 150, 40)
+        self.cleanhp_checkbox.stateChanged.connect(self.cleanhp_checkbox_changed)
+        self.cleanhp_checkbox.setChecked(CompleteSetting.cleanhp)
+        self.task_checkbox = QCheckBox('领取任务', self.setting_frame)
+        self.task_checkbox.setFont(normal_font)
+        self.task_checkbox.setGeometry(435, 270, 150, 40)
+        self.task_checkbox.stateChanged.connect(self.task_checkbox_changed)
+        self.task_checkbox.setChecked(CompleteSetting.task)
 
     def setup_ui(self):
         self.setWindowTitle("WuHua Assistant")
@@ -244,6 +268,7 @@ class MainPage(QMainWindow):
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setWindowIcon(QIcon('picture/icon.jpg'))
         Level.Get()
+        CompleteSetting.Get()
 
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
@@ -328,6 +353,33 @@ class MainPage(QMainWindow):
         Level.level_times = int(self.times_combobox.currentText())
         Level.Save()
 
+    def company_checkbox_changed(self):
+        if self.company_checkbox.isChecked():
+            CompleteSetting.company = True
+        else:
+            CompleteSetting.company = False
+        CompleteSetting.Save()
+
+    def yiwusuo_checkbox_changed(self):
+        if self.yiwusuo_checkbox.isChecked():
+            CompleteSetting.yiwusuo = True
+        else:
+            CompleteSetting.yiwusuo = False
+        CompleteSetting.Save()
+
+    def cleanhp_checkbox_changed(self):
+        if self.cleanhp_checkbox.isChecked():
+            CompleteSetting.cleanhp = True
+        else:
+            CompleteSetting.cleanhp = False
+        CompleteSetting.Save()
+
+    def task_checkbox_changed(self):
+        if self.task_checkbox.isChecked():
+            CompleteSetting.task = True
+        else:
+            CompleteSetting.task = False
+        CompleteSetting.Save()
     # 启动并进入游戏
     def launch_game(self):
         print("启动游戏")
@@ -358,13 +410,17 @@ class MainPage(QMainWindow):
 
     # 完整运行
     def complete_execution(self):
-        self.dispatch_company()
-        time.sleep(1)
-        self.yiwusuo()
-        time.sleep(1)
-        self.clean_hp()
-        time.sleep(1)
-        self.get_task()
+        if CompleteSetting.company is True:
+            self.dispatch_company()
+            time.sleep(3)
+        if CompleteSetting.cleanhp is True:
+            self.clean_hp()
+            time.sleep(3)
+        if CompleteSetting.yiwusuo is True:
+            self.yiwusuo()
+            time.sleep(3)
+        if CompleteSetting.task is True:
+            self.get_task()
 
     # 派遣公司
     def dispatch_company(self):
@@ -377,14 +433,15 @@ class MainPage(QMainWindow):
         time.sleep(5)
         GetGanYing()
         time.sleep(2)
-        pyautogui.click(1200, 400)
+        # 1200 400（空白处）
+        pyautogui.click(ScreenSize.width * 0.469, ScreenSize.height * 0.156)
         time.sleep(1)
         CollectMaterial()
         time.sleep(2)
-        pyautogui.click(1200, 400)
+        pyautogui.click(ScreenSize.width * 0.469, ScreenSize.height * 0.278)
         CollectDunShe()
         time.sleep(2)
-        pyautogui.click(1200, 400)
+        pyautogui.click(ScreenSize.width * 0.469, ScreenSize.height * 0.278)
         time.sleep(1)
         # 顿舍
         GoToDunShe()
@@ -396,13 +453,14 @@ class MainPage(QMainWindow):
         # 办公室
         pyautogui.click(ScreenSize.width * 0.41, ScreenSize.height * 0.33)
         time.sleep(1)                                       
-        ClickGift()
+        if ClickGift() is False:
+            ReturnMainPage()
         time.sleep(1)
         ClickCoin()
         time.sleep(3)
-        pyautogui.click(1200, 600)
+        pyautogui.click(ScreenSize.width * 0.469, ScreenSize.height * 0.417)
         time.sleep(3)
-        pyautogui.click(1200, 600)
+        pyautogui.click(ScreenSize.width * 0.469, ScreenSize.height * 0.417)
         ReturnMainPage()
 
     # 博物研学
@@ -433,17 +491,17 @@ class MainPage(QMainWindow):
         time.sleep(0.5)
         GetTaskReward()
         time.sleep(0.5)
-        pyautogui.click(1320, 420)
+        pyautogui.click(ScreenSize.width*0.515, ScreenSize.height*0.29)
         time.sleep(0.5)
-        pyautogui.click(1320, 420)
-        time.sleep(0.5)
+        pyautogui.click(ScreenSize.width*0.515, ScreenSize.height*0.29)
+        time.sleep(1)
         ClickWeekTask()
         time.sleep(0.5)
         GetTaskReward()
         time.sleep(0.5)
-        pyautogui.click(1320, 420)
+        pyautogui.click(ScreenSize.width*0.515, ScreenSize.height*0.29)
         time.sleep(0.5)
-        pyautogui.click(1320, 420)
+        pyautogui.click(ScreenSize.width*0.515, ScreenSize.height*0.29)
         time.sleep(0.5)
         ReturnMainPage()
 
@@ -469,8 +527,10 @@ class MainPage(QMainWindow):
             time.sleep(1)
         ChooseRank(rank_path)
         time.sleep(1)
+        # 速通
         ClickSuTong()
         time.sleep(2)
+        # 选择次数
         AddTimes(times)
         time.sleep(0.5)
         ClickOK()
@@ -482,6 +542,21 @@ class MainPage(QMainWindow):
         time.sleep(1)
         ClickFinish()
         time.sleep(2)
+        if times > 10:
+            ClickSuTong()
+            time.sleep(2)
+            # 选择次数
+            AddTimes((times - 10))
+            time.sleep(0.5)
+            ClickOK()
+            time.sleep(1)
+            # 可能出现器者好感度已满提醒
+            ClickOK()
+            time.sleep(1)
+            pyautogui.click(1200, 600)
+            time.sleep(1)
+            ClickFinish()
+            time.sleep(2)
         ReturnMainPage()
 
 
