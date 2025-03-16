@@ -1,5 +1,8 @@
 ('I:\\python save\\Wuhua\\build\\MainWindow\\PYZ-00.pyz',
  [('DataPack', '-', 'PYMODULE'),
+  ('DataPack.CompleteSetting',
+   'I:\\python save\\Wuhua\\DataPack\\CompleteSetting.py',
+   'PYMODULE'),
   ('DataPack.FilePath',
    'I:\\python save\\Wuhua\\DataPack\\FilePath.py',
    'PYMODULE'),

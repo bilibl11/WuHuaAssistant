@@ -2,6 +2,8 @@ import sys
 import pyautogui as gui
 import time
 
+from Scripts.Task import ClickWeekTask
+
 while True:
     time.sleep(3)  # 等待3秒
     x, y = gui.position()  # 获取当前鼠标位置

@@ -2,5 +2,7 @@
     "company": true,
     "yiwusuo": true,
     "cleanhp": false,
-    "task": false
+    "task": true,
+    "shop": true,
+    "youli": true
 }

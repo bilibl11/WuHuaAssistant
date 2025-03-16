@@ -38,4 +38,4 @@ def Get():
     level_type = data["level_type"]
     level_rank = data["level_rank"]
     level_times = data["level_times"]
-    print("读取level_data.json成功")
+    print("成功读取level_data.json")

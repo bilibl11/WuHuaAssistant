@@ -14,12 +14,15 @@ a = Analysis(
         'DataPack.FilePath',
         'DataPack.GameState',
         'DataPack.Level',
+        'DataPack.CompleteSetting',
         'Scripts.CleanHP',
         'Scripts.DispatchCompany',
         'Scripts.GameStateServlet',
         'Scripts.Task',
         'Scripts.MainWindowServlet',
-        'Scripts.YIWUSUO'
+        'Scripts.YIWUSUO',
+        'Scripts.Shop',
+        'Scripts.YouLi'
     ],
     hookspath=[],
     hooksconfig={},
@@ -43,14 +46,13 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,
+    console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    console=False,
-    icon='i:\icon.ico'
+    icon='i:\icon.ico',
 )
 coll = COLLECT(
     exe,
@@ -60,5 +62,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='WuHua Assistant',
+    name='WuHua Assistant v1.3',
 )

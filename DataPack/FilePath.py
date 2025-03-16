@@ -9,6 +9,7 @@ image_close_path = ".\picture\model\close.png"
 image_simulator_path = ".\picture\model\simulator.png"
 image_checkClose_path = ".\picture\model\checkclose.png"
 image_JudgeMainPage_path = ".\picture\model\JudgeMainPage.png"
+image_back_path = ".\picture\model\\back.png"
 
 # CleanHP
 image_YanXun_path = ".\picture\model\cleanHP\YanXun.png"
@@ -68,5 +69,11 @@ image_shop_gift_path = ".\picture\model\shop\gift.png"
 image_xunshi_path = ".\picture\model\shop\\xunshi.png"
 image_goBuy_path = ".\picture\model\shop\goBuy.png"
 image_shop_buy_path = ".\picture\model\shop\\buy.png"
+
+# 游历
+image_youli_path = ".\picture\model\youli\youli.png"
+image_getAll_path = ".\picture\model\youli\getAll.png"
+image_task_path = ".\picture\model\youli\\task.png"
+image_reward_path = ".\picture\model\youli\\reward.png"
 
 exe_path = r"H:\leidian\LDPlayer9\dnplayer.exe"

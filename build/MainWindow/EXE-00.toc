@@ -1,5 +1,5 @@
 ('I:\\python save\\Wuhua\\build\\MainWindow\\WuHua Assistant.exe',
- True,
+ False,
  False,
  True,
  ['i:\\icon.ico'],
@@ -55,7 +55,7 @@
  [],
  False,
  False,
- 1741282347,
- [('run.exe',
-   'c:\\users\\90736\\appdata\\local\\programs\\python\\python37\\lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\run.exe',
+ 1741577108,
+ [('runw.exe',
+   'c:\\users\\90736\\appdata\\local\\programs\\python\\python37\\lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\runw.exe',
    'EXECUTABLE')])

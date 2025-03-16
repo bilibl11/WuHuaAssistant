@@ -9,25 +9,6 @@ from Scripts.GameStateServlet import JudgeMainPage
 from Utils import CompareImageAndClick, get_xy, auto_click
 
 
-def LaunchGame():
-    process = subprocess.Popen(exe_path)
-    times = 0
-    while times < 20:
-        if CompareImageAndClick(image_game_exe_path, "启动游戏") is False:
-            print("未成功加载模拟器")
-            time.sleep(5)
-            times += 1
-        else:
-            print("启动游戏成功")
-            break
-    times = 0
-    while times < 40:
-        if JudgeMainPage():
-            break
-        pyautogui.click(2074, 331)
-        time.sleep(5)
-    print("启动游戏成功！")
-
 
 def click_check_close():
     avg = get_xy(image_checkClose_path)
