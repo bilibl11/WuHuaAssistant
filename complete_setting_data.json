@@ -1,7 +1,7 @@
 {
     "company": true,
     "yiwusuo": true,
-    "cleanhp": false,
+    "cleanhp": true,
     "task": true,
     "shop": true,
     "youli": true

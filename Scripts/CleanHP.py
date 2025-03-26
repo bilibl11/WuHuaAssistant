@@ -3,6 +3,8 @@ import subprocess
 import sys
 import time
 
+import pyautogui
+
 from DataPack import Level
 from DataPack.FilePath import image_game_exe_path, image_company_path, image_YanXun_path, image_StartTrain_path, \
     image_JiaoCai_path, image_SuTong_path, image_Add_path, image_ok_path, image_finish_path, \
@@ -89,7 +91,7 @@ def ClickStartTrain():
 
 
 def ChooseLevel(levelPath):
-    print("选择关卡类型")
+    print("选择关卡类型：")
     avg = get_xy(levelPath)
     if avg is not None:
         auto_click(avg)
@@ -98,11 +100,16 @@ def ChooseLevel(levelPath):
         return False
 
 
-def ChooseRank(rankPath):
+def ChooseRank(levelPath, rankPath):
     print("选择关卡")
     avg = get_xy(rankPath)
     if avg is not None:
-        auto_click(avg)
+        # 如果是教材本，需要往右上方点
+        if levelPath == image_JiaoCai_path:
+            print("是教材本")
+            pyautogui.click(avg[0] + 30,avg[1] - 30)
+        else:
+            auto_click(avg)
         return True
     else:
         return False

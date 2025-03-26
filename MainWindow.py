@@ -29,7 +29,7 @@ from Scripts.YIWUSUO import EntryYiWuSuo, ConfirmBuy, Buy
 from Scripts.YouLi import GoYouLi, ClickTask, GetAll, ClickChallenge, ClickReward
 from Utils import CompareImageAndClick
 
-# 控制线程停止
+# 控制线程停止 True代表停止线程
 stop_thread = False
 # 显示屏尺寸
 ScreenSize = pyautogui.size()
@@ -275,7 +275,7 @@ class MainPage(QMainWindow):
         self.youli_checkbox = self.checkbox_model(155, 320, "游历", CompleteSetting.youli)
         self.youli_checkbox.stateChanged.connect(self.youli_checkbox_changed)
 
-    # 使用指南界面
+    # 使用指南界面(帮助界面)
     def create_help_frame(self):
         self.help_frame = QFrame(self.central_widget)
         self.help_frame.raise_()
@@ -309,7 +309,8 @@ class MainPage(QMainWindow):
         self.note_text.setGeometry(20, 245, 500, 120)
         self.note_text.setFont(normal_font)
         self.note_text.setWordWrap(True)  # 让 QLabel 自动换行
-        self.note_text.setText("1.脚本运行过程中请不要使用电脑\n")
+        self.note_text.setText("1.脚本运行过程中请不要使用电脑\n"
+                               "2.脚本运行完成会弹出通知窗口\n")
         # 功能说明
         self.description_title = QLabel("功能说明:", self.help_frame)
         self.description_title.setGeometry(535, 10, 100, 40)
@@ -318,10 +319,8 @@ class MainPage(QMainWindow):
         self.description_text.setGeometry(540, 55, 500, 120)
         self.description_text.setFont(normal_font)
         self.description_text.setWordWrap(True)  # 让 QLabel 自动换行
-        self.description_text.setText("1.失误点错按钮\n"
-                                   "三秒内点击鼠标右键可以取消刚刚点击的按钮运行的功能\n\n"
-                                   "2.按钮功能运行完成判断\n"
-                                   "在运行完成后会弹出通知窗口")
+        self.description_text.setText("1.不小心点错按钮\n"
+                                   "三秒内点击鼠标右键可以取消刚刚点击的按钮运行的功能\n")
 
     # 勾选框模板
     def checkbox_model(self, x, y, text, set_checked):
@@ -550,6 +549,9 @@ class MainPage(QMainWindow):
                 if JudgeMainPage():
                     time.sleep(1)
                     print("启动游戏成功！")
+                    self.raise_()  # 让窗口置顶
+                    self.activateWindow()  # 激活窗口
+                    time.sleep(1)
                     QMessageBox.information(self, '', '启动游戏成功！', QMessageBox.Ok)
                     break
                 # 2560 1440
@@ -590,7 +592,10 @@ class MainPage(QMainWindow):
         self.raise_()  # 让窗口置顶
         self.activateWindow()  # 激活窗口
         time.sleep(1)
-        QMessageBox.information(self, '', '完整运行结束', QMessageBox.Ok)
+        if stop_thread is True:
+            QMessageBox.information(self, '', '进程已停止', QMessageBox.Ok)
+        else:
+            QMessageBox.information(self, '', '完整运行结束', QMessageBox.Ok)
 
     # 派遣公司
     def dispatch_company(self):
@@ -681,8 +686,8 @@ class MainPage(QMainWindow):
             Buy()
             time.sleep(0.5)
             ConfirmBuy()
-            time.sleep(0.5)
-            pyautogui.click(1200, 600)
+            time.sleep(1.5)
+            pyautogui.click(ScreenSize.width * 0.469, ScreenSize.height * 0.417)
             time.sleep(0.5)
         ReturnMainPage()
 
@@ -742,7 +747,7 @@ class MainPage(QMainWindow):
             level_path = ChangeKaoHeLevelPath()
             ChooseLevel(level_path)
             time.sleep(1)
-        ChooseRank(rank_path)
+        ChooseRank(level_path, rank_path)
         time.sleep(1)
         # 速通
         ClickSuTong()
@@ -780,7 +785,7 @@ class MainPage(QMainWindow):
             self.raise_()  # 让窗口置顶
             self.activateWindow()  # 激活窗口
             time.sleep(1)
-            QMessageBox.information(self, '', '脚本运行结束', QMessageBox.Ok)
+            QMessageBox.information(self, '', '清理体力成功！', QMessageBox.Ok)
 
     # 商亭
     def shop(self):

@@ -26,7 +26,7 @@ def Buy():
 
 
 def ConfirmBuy():
-    print("进入易物所")
+    print("确认购买")
     avg = get_xy(image_money_path)
     if avg is not None:
         auto_click(avg)
