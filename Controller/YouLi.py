@@ -3,7 +3,7 @@ import pyautogui
 
 from DataPack.FilePath import image_youli_path, image_getAll_path, image_task_path, \
     image_reward_path
-from Utils import get_xy, auto_click
+from Utils.Utils import get_xy, auto_click
 
 
 def GoYouLi():

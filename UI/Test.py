@@ -2,7 +2,7 @@ import sys
 import pyautogui as gui
 import time
 
-from Scripts.Task import ClickWeekTask
+from Controller.Task import ClickWeekTask
 
 while True:
     time.sleep(3)  # 等待3秒

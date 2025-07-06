@@ -1,15 +1,11 @@
 # 开发时间:2024/10/4 23:40
-import subprocess
-import sys
-import time
 
 import pyautogui
 
-from DataPack.FilePath import image_game_exe_path, image_company_path, image_collect_path, image_DunShe_path, \
-    image_office_path, image_gift_path, image_coin_path, image_getGanYing_path, image_enterDunShe_path, \
+from DataPack.FilePath import image_company_path, image_collect_path, image_office_path, image_gift_path, image_coin_path, image_getGanYing_path, image_enterDunShe_path, \
     image_getHP_path, image_return_path
-from Scripts.GameStateServlet import ReturnMainPage
-from Utils import get_xy, auto_click
+from Controller.GameStateServlet import ReturnMainPage
+from Utils.Utils import get_xy, auto_click
 
 
 def EntryCompany():

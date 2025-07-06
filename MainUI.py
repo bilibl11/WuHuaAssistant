@@ -4,30 +4,31 @@ import time
 import subprocess
 
 import pyautogui
-from PyQt5.QtCore import Qt, QSize, QEvent, QPoint, QObject
-from PyQt5.QtGui import QPixmap, QIcon, QFont, QMouseEvent
+from PyQt5.QtCore import Qt, QSize, QPoint
+from PyQt5.QtGui import QPixmap, QIcon, QFont
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QToolButton, QFrame, QWidget, QComboBox, \
     QCheckBox, QMessageBox
 from pynput import mouse
 
-from DataPack import Level, CompleteSetting
-from DataPack.FilePath import exe_path, image_game_exe_path, image_PeiYang_Chen_path, image_KaoHe_path
-from Scripts import Shop
-from Scripts.CleanHP import (
+from DataPack import Level, CompleteSetting, Path
+from DataPack.FilePath import image_game_exe_path, image_KaoHe_path
+from Controller import Shop
+from Controller.CleanHP import (
     ClickYanXun, ChooseLevel, ClickSuTong,
     AddTimes, ClickOK, ClickFinish, ClickStartTrain, ChooseRank, ChangeLevelPath, ChangeRankPath, ChangeKaoHeLevelPath
 )
-from Scripts.DispatchCompany import (
+from Controller.DispatchCompany import (
     EntryCompany, CollectDunShe, CollectMaterial,
     ClickGift, ClickCoin, GetGanYing, GoToDunShe, GetHP, ReturnCompany
 )
-from Scripts.GameStateServlet import ReturnMainPage, JudgeMainPage, Back
-from Scripts.MainWindowServlet import click_check_close
-from Scripts.Shop import GoShop, ClickXunShi, Gobuy, BuyGift
-from Scripts.Task import EntryTask, ClickWeekTask, GetTaskReward
-from Scripts.YIWUSUO import EntryYiWuSuo, ConfirmBuy, Buy
-from Scripts.YouLi import GoYouLi, ClickTask, GetAll, ClickChallenge, ClickReward
-from Utils import CompareImageAndClick
+from Controller.GameStateServlet import ReturnMainPage, JudgeMainPage, Back
+from Controller.MainUIServlet import click_check_close, get_all_json_data
+from Controller.Shop import GoShop, ClickXunShi, Gobuy, BuyGift
+from Controller.Task import EntryTask, ClickWeekTask, GetTaskReward
+from Controller.YIWUSUO import EntryYiWuSuo, ConfirmBuy, Buy
+from Controller.YouLi import GoYouLi, ClickTask, GetAll, ClickChallenge, ClickReward
+from UI import SettingUI, HelpUI
+from Utils.Utils import CompareImageAndClick
 
 # 控制线程停止 True代表停止线程
 stop_thread = False
@@ -39,7 +40,6 @@ is_complete_execution = False
 now_page = "MainPage"
 
 class MainPage(QMainWindow):
-
 
     def __init__(self):
         super().__init__()
@@ -86,7 +86,7 @@ class MainPage(QMainWindow):
         self.icon_label.setScaledContents(True)
 
         # Title
-        self.title_label = QLabel("WuHua Assistant v1.3", self.central_widget)
+        self.title_label = QLabel("WuHua Assistant v1.4", self.central_widget)
         self.title_label.setGeometry(55, 5, 200, 30)
         self.title_label.setFont(QFont('Arial', 10, QFont.Bold))
 
@@ -205,140 +205,12 @@ class MainPage(QMainWindow):
         """)
         return button
 
-    # 设置界面
-    def create_setting_frame(self):
-        # 基本布局设置
-        self.setting_frame = QFrame(self.central_widget)
-        self.setting_frame.raise_()
-        self.setting_frame.setGeometry(85, 45, 1100, 900)
-        self.left_setting_frame = QFrame(self.setting_frame)
-        self.left_setting_frame.setGeometry(5, 5, 540, 865)
-        self.left_setting_frame.setStyleSheet("border: 1px solid black; border-radius: 5px;")
-        self.right_setting_frame = QFrame(self.setting_frame)
-        self.right_setting_frame.setGeometry(560, 5, 530, 865)
-        self.right_setting_frame.setStyleSheet("border: 1px solid black; border-radius: 5px;")
-        big_font = QFont()
-        big_font.setPointSize(14)
-        normal_font = QFont()
-        normal_font.setPointSize(12)
-        # 左边设置界面
-        self.level_label = QLabel("关卡设置:", self.setting_frame)
-        self.level_label.setGeometry(15, 10, 100, 40)
-        self.level_label.setFont(big_font)
-        # 类型选择
-        self.Level_type_label = QLabel("关卡类型选择:", self.setting_frame)
-        self.Level_type_label.setGeometry(10, 60, 150, 40)
-        self.Level_type_label.setFont(normal_font)
-        self.type_combobox = QComboBox(self.setting_frame)
-        self.type_combobox.setGeometry(420, 60, 100, 40)
-        self.type_combobox.setFont(normal_font)
-        type_option = ["冬谷币", "教材", "装备", "宿卫本", "构术本", "远击本", "轻锐本", "战略本"]
-        self.type_combobox.addItems(type_option)
-        self.type_combobox.setCurrentText(Level.level_type)
-        self.type_combobox.currentIndexChanged.connect(self.type_combobox_changed)
-        # rank选择
-        self.Level_rank_label = QLabel("关卡选择:", self.setting_frame)
-        self.Level_rank_label.setGeometry(10, 110, 150, 40)
-        self.Level_rank_label.setFont(normal_font)
-        self.rank_combobox = QComboBox(self.setting_frame)
-        self.rank_combobox.setGeometry(420, 110, 100, 40)
-        self.rank_combobox.setFont(normal_font)
-        rank_option = ["子", "丑", "寅", "卯", "辰"]
-        self.rank_combobox.addItems(rank_option)
-        self.rank_combobox.setCurrentText(Level.level_rank)
-        self.rank_combobox.currentIndexChanged.connect(self.rank_combobox_changed)
-        # 次数选择
-        self.Level_times_label = QLabel("速通次数选择:", self.setting_frame)
-        self.Level_times_label.setGeometry(10, 160, 150, 40)
-        self.Level_times_label.setFont(normal_font)
-        self.times_combobox = QComboBox(self.setting_frame)
-        self.times_combobox.setGeometry(420, 160, 100, 40)
-        self.times_combobox.setFont(normal_font)
-        times_option = [str(i) for i in range(1, 21)] # 列表推导式
-        self.times_combobox.addItems(times_option)
-        self.times_combobox.setCurrentText(str(Level.level_times))
-        self.times_combobox.currentIndexChanged.connect(self.times_combobox_changed)
-        # 完整运行设置
-        self.complete_label = QLabel("完整运行设置:", self.setting_frame)
-        self.complete_label.setGeometry(15, 220, 150, 40)
-        self.complete_label.setFont(big_font)
-        self.company_checkbox = self.checkbox_model(15, 270, "派遣公司", CompleteSetting.company)
-        self.company_checkbox.stateChanged.connect(self.company_checkbox_changed)
-        self.yiwusuo_checkbox = self.checkbox_model(155, 270, "易物所", CompleteSetting.yiwusuo)
-        self.yiwusuo_checkbox.stateChanged.connect(self.yiwusuo_checkbox_changed)
-        self.cleanhp_checkbox = self.checkbox_model(295, 270, "清理体力", CompleteSetting.cleanhp)
-        self.cleanhp_checkbox.stateChanged.connect(self.cleanhp_checkbox_changed)
-        self.task_checkbox = self.checkbox_model(435, 270, "领取任务", CompleteSetting.task)
-        self.task_checkbox.stateChanged.connect(self.task_checkbox_changed)
-        self.shop_checkbox = self.checkbox_model(15, 320, "商亭", CompleteSetting.shop)
-        self.shop_checkbox.stateChanged.connect(self.shop_checkbox_changed)
-        self.youli_checkbox = self.checkbox_model(155, 320, "游历", CompleteSetting.youli)
-        self.youli_checkbox.stateChanged.connect(self.youli_checkbox_changed)
-
-    # 使用指南界面(帮助界面)
-    def create_help_frame(self):
-        self.help_frame = QFrame(self.central_widget)
-        self.help_frame.raise_()
-        self.help_frame.setGeometry(85, 45, 1100, 900)
-        # 中间分隔线
-        line = QFrame(self.help_frame)
-        line.setFrameShape(QFrame.VLine)  # 竖线
-        line.setFrameShadow(QFrame.Plain)  # 样式
-        line.setGeometry(520, 20, 5, 860)
-        big_font = QFont()
-        big_font.setPointSize(14)
-        normal_font = QFont()
-        normal_font.setPointSize(12)
-        # 硬件要求
-        self.require_title = QLabel("硬件要求:", self.help_frame)
-        self.require_title.setGeometry(15, 10, 100, 40)
-        self.require_title.setFont(big_font)
-        self.require_text = QLabel("", self.help_frame)
-        self.require_text.setGeometry(20, 55, 500, 120)
-        self.require_text.setFont(normal_font)
-        self.require_text.setWordWrap(True)  # 让 QLabel 自动换行
-        self.require_text.setText("1.电脑显示屏分辨率16:9\n"
-                                   "2.游戏需要使用雷电模拟器运行\n"
-                                   "3.游戏图标需要放在桌面上\n"
-                                   "4.模拟器窗口为启动大小(不是全屏)")
-        # 注意事项
-        self.note_title = QLabel("注意事项:", self.help_frame)
-        self.note_title.setGeometry(15, 220, 100, 40)
-        self.note_title.setFont(big_font)
-        self.note_text = QLabel("", self.help_frame)
-        self.note_text.setGeometry(20, 245, 500, 120)
-        self.note_text.setFont(normal_font)
-        self.note_text.setWordWrap(True)  # 让 QLabel 自动换行
-        self.note_text.setText("1.脚本运行过程中请不要使用电脑\n"
-                               "2.脚本运行完成会弹出通知窗口\n")
-        # 功能说明
-        self.description_title = QLabel("功能说明:", self.help_frame)
-        self.description_title.setGeometry(535, 10, 100, 40)
-        self.description_title.setFont(big_font)
-        self.description_text = QLabel("", self.help_frame)
-        self.description_text.setGeometry(540, 55, 500, 120)
-        self.description_text.setFont(normal_font)
-        self.description_text.setWordWrap(True)  # 让 QLabel 自动换行
-        self.description_text.setText("1.不小心点错按钮\n"
-                                   "三秒内点击鼠标右键可以取消刚刚点击的按钮运行的功能\n")
-
-    # 勾选框模板
-    def checkbox_model(self, x, y, text, set_checked):
-        normal_font = QFont()
-        normal_font.setPointSize(12)
-        checkbox = QCheckBox(text, self.setting_frame)
-        checkbox.setFont(normal_font)
-        checkbox.setGeometry(x, y, 150, 40)
-        checkbox.setChecked(set_checked)
-        return checkbox
-
     # ui初始化
     def setup_ui(self):
         self.setFixedSize(1200, 950)
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setWindowIcon(QIcon('picture/icon.jpg'))
-        Level.Get()
-        CompleteSetting.Get()
+        get_all_json_data()
 
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
@@ -346,8 +218,8 @@ class MainPage(QMainWindow):
         self.create_header()
         self.create_left_area()
         self.create_main_frame()
-        self.create_setting_frame()
-        self.create_help_frame()
+        self.help_frame = HelpUI.create_help_frame(self)
+        self.setting_frame = SettingUI.create_setting_frame(self)
 
         self.setting_frame.hide()
         self.help_frame.hide()
@@ -464,60 +336,6 @@ class MainPage(QMainWindow):
                  }
              """)
 
-    def type_combobox_changed(self):
-        Level.level_type = self.type_combobox.currentText()
-        Level.Save()
-
-    def rank_combobox_changed(self):
-        Level.level_rank = self.rank_combobox.currentText()
-        Level.Save()
-
-    def times_combobox_changed(self):
-        Level.level_times = int(self.times_combobox.currentText())
-        Level.Save()
-
-    def company_checkbox_changed(self):
-        if self.company_checkbox.isChecked():
-            CompleteSetting.company = True
-        else:
-            CompleteSetting.company = False
-        CompleteSetting.Save()
-
-    def yiwusuo_checkbox_changed(self):
-        if self.yiwusuo_checkbox.isChecked():
-            CompleteSetting.yiwusuo = True
-        else:
-            CompleteSetting.yiwusuo = False
-        CompleteSetting.Save()
-
-    def cleanhp_checkbox_changed(self):
-        if self.cleanhp_checkbox.isChecked():
-            CompleteSetting.cleanhp = True
-        else:
-            CompleteSetting.cleanhp = False
-        CompleteSetting.Save()
-
-    def task_checkbox_changed(self):
-        if self.task_checkbox.isChecked():
-            CompleteSetting.task = True
-        else:
-            CompleteSetting.task = False
-        CompleteSetting.Save()
-
-    def shop_checkbox_changed(self):
-        if self.task_checkbox.isChecked():
-            CompleteSetting.shop = True
-        else:
-            CompleteSetting.shop = False
-        CompleteSetting.Save()
-
-    def youli_checkbox_changed(self):
-        if self.task_checkbox.isChecked():
-            CompleteSetting.youli = True
-        else:
-            CompleteSetting.youli = False
-        CompleteSetting.Save()
-
     # 启动并进入游戏
     def launch_game(self):
         global stop_thread
@@ -529,36 +347,55 @@ class MainPage(QMainWindow):
         if stop_thread is True:
             time.sleep(1)
             QMessageBox.information(self, '', '进程已停止', QMessageBox.Ok)
-        else:
-            print("启动游戏")
-            subprocess.Popen(exe_path)
-            self.start_button.setEnabled(False)
-            time.sleep(1)
-            # 如果游戏已经启动
-            if JudgeMainPage():
-                print("启动游戏成功！")
-                return
-            times = 0
-            while times < 20 and stop_thread is False:
-                if CompareImageAndClick(image_game_exe_path, "启动游戏") is False:
-                    print("未成功加载模拟器")
-                    time.sleep(5)
-                    times += 1
-            times = 0
-            while times < 40 and stop_thread is False:
-                if JudgeMainPage():
-                    time.sleep(1)
-                    print("启动游戏成功！")
-                    self.raise_()  # 让窗口置顶
-                    self.activateWindow()  # 激活窗口
-                    time.sleep(1)
-                    QMessageBox.information(self, '', '启动游戏成功！', QMessageBox.Ok)
-                    break
-                # 2560 1440
-                pyautogui.click(ScreenSize.width * 0.81, ScreenSize.height * 0.229)
+        print("启动游戏")
+        subprocess.Popen(Path.exe_path)
+        self.start_button.setEnabled(False)
+        time.sleep(1)
+        # 如果游戏已经启动
+        if JudgeMainPage():
+            print("启动游戏成功！")
+            return
+        times = 0
+        while times < 20 and stop_thread is False:
+            if CompareImageAndClick(image_game_exe_path, "启动游戏") is False:
+                print("未成功加载模拟器")
                 time.sleep(5)
-                click_check_close()
                 times += 1
+            else :
+                print("成功点击游戏图标")
+                break
+        if times >= 20:
+            QMessageBox.information(self, '', '未找到游戏，进程已停止', QMessageBox.Ok)
+            return
+        time.sleep(15)
+        times = 0
+        while times < 40 and stop_thread is False:
+            # 判断是否成功启动游戏
+            if JudgeMainPage():
+                time.sleep(1)
+                print("启动游戏成功！")
+                self.raise_()  # 让窗口置顶
+                self.activateWindow()  # 激活窗口
+                time.sleep(1)
+                QMessageBox.information(self, '', '启动游戏成功！', QMessageBox.Ok)
+                return
+            # 检测游戏是否需要更新
+
+            # 2560 1440
+            pyautogui.click(ScreenSize.width * 0.81, ScreenSize.height * 0.229)
+            time.sleep(2)
+            if JudgeMainPage():
+                time.sleep(1)
+                print("启动游戏成功！")
+                self.raise_()  # 让窗口置顶
+                self.activateWindow()  # 激活窗口
+                time.sleep(1)
+                QMessageBox.information(self, '', '启动游戏成功！', QMessageBox.Ok)
+                return
+            time.sleep(2)
+            click_check_close()
+            times += 1
+        QMessageBox.information(self, '', '启动游戏失败，进程已停止', QMessageBox.Ok)
 
     # 完整运行
     def complete_execution(self):
@@ -570,24 +407,46 @@ class MainPage(QMainWindow):
                 QMessageBox.information(self, '', '进程已停止', QMessageBox.Ok)
                 return
             time.sleep(1)
+        # 检查是否在主界面
+        if JudgeMainPage() is False:
+            QMessageBox.information(self, '', '请将游戏打开到主界面再启动脚本，进程已停止', QMessageBox.Ok)
+            return
         if CompleteSetting.company is True and stop_thread is False:
             self.dispatch_company()
             time.sleep(3)
+            if JudgeMainPage() is False:
+                QMessageBox.information(self, '', '脚本运行异常，错误函数：dispatch_company，进程已停止', QMessageBox.Ok)
+                return
         if CompleteSetting.cleanhp is True and stop_thread is False:
             self.clean_hp()
             time.sleep(3)
+            if JudgeMainPage() is False:
+                QMessageBox.information(self, '', '脚本运行异常，错误函数：clean_hp，进程已停止', QMessageBox.Ok)
+                return
         if CompleteSetting.yiwusuo is True and stop_thread is False:
             self.yiwusuo()
             time.sleep(3)
+            if JudgeMainPage() is False:
+                QMessageBox.information(self, '', '脚本运行异常，错误函数：yiwusuo，进程已停止', QMessageBox.Ok)
+                return
         if CompleteSetting.task is True and stop_thread is False:
             self.get_task()
             time.sleep(3)
+            if JudgeMainPage() is False:
+                QMessageBox.information(self, '', '脚本运行异常，错误函数：get_task，进程已停止', QMessageBox.Ok)
+                return
         if CompleteSetting.youli is True and stop_thread is False:
             self.youli()
             time.sleep(3)
+            if JudgeMainPage() is False:
+                QMessageBox.information(self, '', '脚本运行异常，错误函数：youli，进程已停止', QMessageBox.Ok)
+                return
         if CompleteSetting.shop is True and stop_thread is False:
             self.shop()
             time.sleep(3)
+            if JudgeMainPage() is False:
+                QMessageBox.information(self, '', '脚本运行异常，错误函数：shop，进程已停止', QMessageBox.Ok)
+                return
         is_complete_execution = False
         self.raise_()  # 让窗口置顶
         self.activateWindow()  # 激活窗口
@@ -607,7 +466,7 @@ class MainPage(QMainWindow):
                 return
             time.sleep(1)
         print("派遣公司")
-        subprocess.Popen(exe_path)  # 打开游戏界面
+        subprocess.Popen(Path.exe_path)  # 打开游戏界面
         time.sleep(1)
         if ReturnMainPage() is True:
             time.sleep(2.5)
@@ -660,7 +519,7 @@ class MainPage(QMainWindow):
                 QMessageBox.information(self, '', '进程已停止', QMessageBox.Ok)
                 return
             time.sleep(1)
-        subprocess.Popen(exe_path)  # 打开游戏界面
+        subprocess.Popen(Path.exe_path)  # 打开游戏界面
         time.sleep(1)
         self.yiwusuo()
         time.sleep(1)
@@ -733,7 +592,7 @@ class MainPage(QMainWindow):
         rank_path = ChangeRankPath(level_path)
         times = Level.level_times
         print("清理体力")
-        process = subprocess.Popen(exe_path)  # 打开游戏界面
+        process = subprocess.Popen(Path.exe_path)  # 打开游戏界面
         time.sleep(1)
         ClickYanXun()
         time.sleep(1)
@@ -759,7 +618,7 @@ class MainPage(QMainWindow):
         time.sleep(1)
         # 可能出现器者好感度已满提醒
         ClickOK()
-        time.sleep(1)
+        time.sleep(2)
         pyautogui.click(1200, 600)
         time.sleep(1)
         ClickFinish()

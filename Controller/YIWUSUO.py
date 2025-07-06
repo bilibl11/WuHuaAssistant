@@ -2,7 +2,7 @@
 import pyautogui
 
 from DataPack.FilePath import image_yiwusuo_path, image_money_path, image_moneyGreen_path
-from Utils import get_xy, auto_click
+from Utils.Utils import get_xy, auto_click
 
 
 def EntryYiWuSuo():

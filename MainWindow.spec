@@ -4,25 +4,27 @@
 block_cipher = None
 
 a = Analysis(
-    ['MainWindow.py'],
+    ['MainUI.py'],
     pathex=[],
     binaries=[],
     datas=[],
     hiddenimports=[
         'sip',
         'Utils',
+        'UI.HelpUI',
+        'UI.SettingUI'
         'DataPack.FilePath',
         'DataPack.GameState',
         'DataPack.Level',
         'DataPack.CompleteSetting',
-        'Scripts.CleanHP',
-        'Scripts.DispatchCompany',
-        'Scripts.GameStateServlet',
-        'Scripts.Task',
-        'Scripts.MainWindowServlet',
-        'Scripts.YIWUSUO',
-        'Scripts.Shop',
-        'Scripts.YouLi'
+        'Controller.CleanHP',
+        'Controller.DispatchCompany',
+        'Controller.GameStateServlet',
+        'Controller.Task',
+        'Controller.MainWindowServlet',
+        'Controller.YIWUSUO',
+        'Controller.Shop',
+        'Controller.YouLi'
     ],
     hookspath=[],
     hooksconfig={},
