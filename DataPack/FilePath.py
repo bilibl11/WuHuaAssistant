@@ -75,5 +75,3 @@ image_youli_path = ".\picture\model\youli\youli.png"
 image_getAll_path = ".\picture\model\youli\getAll.png"
 image_task_path = ".\picture\model\youli\\task.png"
 image_reward_path = ".\picture\model\youli\\reward.png"
-
-exe_path = r"H:\leidian\LDPlayer9\dnplayer.exe"

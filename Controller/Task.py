@@ -2,8 +2,8 @@
 # 点击任务
 import pyautogui
 
-from DataPack.FilePath import image_entryTask_path, image_weekTask_path, image_getTask_path
-from Utils import get_xy, auto_click
+from DataPack.FilePath import image_weekTask_path, image_getTask_path
+from Utils.Utils import get_xy, auto_click
 
 
 def EntryTask():

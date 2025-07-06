@@ -7,7 +7,7 @@ import pyautogui
 
 from DataPack.FilePath import image_game_exe_path, image_home_path, image_YanXun_path
 
-shot_path = "screenshot.png"
+shot_path = "../screenshot.png"
 
 
 def get_xy(image_model_path):

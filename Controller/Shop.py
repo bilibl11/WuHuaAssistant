@@ -2,7 +2,7 @@
 # 点击商亭
 from DataPack.FilePath import image_shop_path, image_shop_gift_path, image_xunshi_path, image_goBuy_path, \
     image_shop_buy_path
-from Utils import get_xy, auto_click
+from Utils.Utils import get_xy, auto_click
 
 
 def GoShop():

@@ -1,8 +1,8 @@
 # 开发时间:2025/3/2 13:53
 import pyautogui
 
-from DataPack.FilePath import image_JudgeMainPage_path, image_home_path, image_back_path
-from Utils import get_xy, auto_click
+from DataPack.FilePath import image_JudgeMainPage_path, image_back_path
+from Utils.Utils import get_xy, auto_click
 
 
 # 判断是否在游戏主界面

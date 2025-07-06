@@ -1,18 +1,16 @@
 # 开发时间:2024/10/5 0:16
-import subprocess
-import sys
 import time
 
 import pyautogui
 
 from DataPack import Level
-from DataPack.FilePath import image_game_exe_path, image_company_path, image_YanXun_path, image_StartTrain_path, \
+from DataPack.FilePath import image_YanXun_path, image_StartTrain_path, \
     image_JiaoCai_path, image_SuTong_path, image_Add_path, image_ok_path, image_finish_path, \
-    image_home_path, image_Money_path, image_ZhuangBei_path, image_SuWei_path, image_ZhanLue_path, image_QingRui_path, \
+    image_Money_path, image_ZhuangBei_path, image_SuWei_path, image_ZhanLue_path, image_QingRui_path, \
     image_YuanJi_path, image_GouShu_path, image_PeiYang_Zi_path, image_PeiYang_Chou_path, image_PeiYang_Yin_path, \
     image_PeiYang_Mao_path, image_PeiYang_Chen_path, image_KaoHe_Zi_path, image_KaoHe_Chou_path, image_KaoHe_Mao_path, \
     image_KaoHe_Chen_path, image_KaoHe_Yin_path, image_KaoHe_path
-from Utils import get_xy, auto_click, CompareImageAndClick
+from Utils.Utils import get_xy, auto_click
 
 PeiYang_dict = {
     "冬谷币": image_Money_path,
