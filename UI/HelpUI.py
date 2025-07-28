@@ -48,6 +48,20 @@ def create_help_frame(main_ui):
     description_text.setGeometry(540, 55, 500, 120)
     description_text.setFont(normal_font)
     description_text.setWordWrap(True)  # 让 QLabel 自动换行
-    description_text.setText("1.不小心点错按钮\n"
-                                  "三秒内点击鼠标右键可以取消刚刚点击的按钮运行的功能\n")
+    description_text.setText("1.不小心点错按钮：\n"
+                             "三秒内点击鼠标右键可以取消刚刚点击的按钮运行的功能\n"
+                             "2.模拟器路径设置：\n"
+                             "一般是选择dnplayer.exe文件\n")
+    # 博物研学功能说明
+    bowu_description_title = QLabel("博物研学功能说明:", help_frame)
+    bowu_description_title.setGeometry(535, 200, 200, 40)
+    bowu_description_title.setFont(big_font)
+    bowu_description_text = QLabel("", help_frame)
+    bowu_description_text.setGeometry(540, 245, 500, 180)
+    bowu_description_text.setFont(normal_font)
+    bowu_description_text.setWordWrap(True)  # 让 QLabel 自动换行
+    bowu_description_text.setText("1.功能运行时间说明：\n"
+                                  "本功能运行时间较长，大概10-15分钟，中途无法使用电脑，目前没有中途暂停功能，请看情况使用该功能\n"
+                                  "2.挂机器者选择：\n"
+                                  "通过设置关心器者可以选择脚本上阵的器者，一般六个满级器者是能成功完成挂机的\n")
     return help_frame

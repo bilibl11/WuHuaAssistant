@@ -11,6 +11,7 @@ state_dict = {
     "task": True,
     "shop": True,
     "youli": True,
+    "waiqin": True
 }
 
 def Save():

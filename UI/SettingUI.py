@@ -7,14 +7,15 @@ from Controller.MainUIServlet import get_all_json_data
 from DataPack import Level, CompleteSetting, FilePath, Path
 from DataPack.CompleteSetting import state_dict, print_dict
 
-complete_checkbox_texts = ["派遣公司", "易物所", "清理体力", "领取任务", "商亭", "游历"]
+complete_checkbox_texts = ["派遣公司", "易物所", "清理体力", "领取任务", "商亭", "游历", "外勤"]
 complete_text_dict = {
     "派遣公司" : "company",
     "易物所": "yiwusuo",
     "清理体力": "cleanhp",
     "领取任务": "task",
     "商亭": "shop",
-    "游历": "youli"
+    "游历": "youli",
+    "外勤": "waiqin"
 }
 
 def type_combobox_changed(text):
@@ -146,7 +147,7 @@ def revise_simulator_path(simulator_path_text):
             # 更新配置
             Path.exe_path = file_path
             Path.Save()
-            simulator_path_text.setText(FilePath.exe_path)
+            simulator_path_text.setText(Path.exe_path)
         else:
             print("用户取消了文件选择")
     except Exception as e:

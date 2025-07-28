@@ -2,17 +2,23 @@ import sys
 import threading
 import time
 import subprocess
+import webbrowser
 
 import pyautogui
-from PyQt5.QtCore import Qt, QSize, QPoint
+from PyQt5.QtCore import Qt, QSize, QPoint, QTimer
 from PyQt5.QtGui import QPixmap, QIcon, QFont
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QToolButton, QFrame, QWidget, QComboBox, \
     QCheckBox, QMessageBox
 from pynput import mouse
 
+from Controller.BoWu import click_bowu, click_zhuti, click_qicheng, choose_boss, choose_diffculty, click_jinyinjixing, \
+    add_role, click_ok, choose_fuzhu, entry_yanxue, click_rest, add_role2, click_ok2, click_ok3, \
+    enter_battleUI, click_start_battle, click_ok4, click_ok5, click_role, click_battle, click_hardBattle, click_boss, \
+    finish_yanxue, click_reward, get_reward, get_own_position, continue_yanxue
+from Controller.WaiQin import enter_waiqin, start_waiqin, zhengzaiwaiqin
 from DataPack import Level, CompleteSetting, Path
 from DataPack.FilePath import image_game_exe_path, image_KaoHe_path
-from Controller import Shop
+from Controller import Shop, MainUIServlet, BoWu, WaiQin
 from Controller.CleanHP import (
     ClickYanXun, ChooseLevel, ClickSuTong,
     AddTimes, ClickOK, ClickFinish, ClickStartTrain, ChooseRank, ChangeLevelPath, ChangeRankPath, ChangeKaoHeLevelPath
@@ -22,11 +28,12 @@ from Controller.DispatchCompany import (
     ClickGift, ClickCoin, GetGanYing, GoToDunShe, GetHP, ReturnCompany
 )
 from Controller.GameStateServlet import ReturnMainPage, JudgeMainPage, Back
-from Controller.MainUIServlet import click_check_close, get_all_json_data
+from Controller.MainUIServlet import click_check_close, get_all_json_data, click_update
 from Controller.Shop import GoShop, ClickXunShi, Gobuy, BuyGift
 from Controller.Task import EntryTask, ClickWeekTask, GetTaskReward
 from Controller.YIWUSUO import EntryYiWuSuo, ConfirmBuy, Buy
 from Controller.YouLi import GoYouLi, ClickTask, GetAll, ClickChallenge, ClickReward
+from DataPack.Level import level_type
 from UI import SettingUI, HelpUI
 from Utils.Utils import CompareImageAndClick
 
@@ -44,9 +51,11 @@ class MainPage(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setup_ui()
-        self.dragging = False  # 是否正在拖动
-        self.offset = QPoint()  # 鼠标按下时的偏移量
         self.start_global_mouse_listener()
+
+        self.dragging = False
+        self.start_pos = QPoint()  # 鼠标按下时的位置
+        self.last_pos = QPoint()  # 上次移动的位置
 
     # 全局鼠标监听（即使窗口不在前台）
     def start_global_mouse_listener(self):
@@ -60,22 +69,25 @@ class MainPage(QMainWindow):
         listener_thread = threading.Thread(target=listener.start, daemon=True)
         listener_thread.start()
 
-    # 重写拖动事件
     def mousePressEvent(self, event):
-        # 如果鼠标按下的是左键
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton and 0 <= event.y() <= 30:
             self.dragging = True
-            self.offset = event.pos()  # 记录鼠标按下时的位置
+            # 获取鼠标在屏幕坐标系中的绝对位置（例如：屏幕左上角为原点，向右为 x 正方向，向下为 y 正方向）
+            self.start_pos = event.globalPos()
+            self.last_pos = self.pos()
+        # 再调用父类的同名方法，保留默认行为
+        super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        # 如果正在拖动，则移动窗口
         if self.dragging:
-            self.move(self.pos() + event.pos() - self.offset)
+            # 实时更新目标位置，但不立即移动窗口
+            self.target_pos = self.last_pos + (event.globalPos() - self.start_pos)
+            self.move(self.target_pos)
 
     def mouseReleaseEvent(self, event):
-        # 鼠标释放时停止拖动
         if event.button() == Qt.LeftButton:
             self.dragging = False
+        super().mouseReleaseEvent(event)
 
     # 顶部区域
     def create_header(self):
@@ -91,65 +103,28 @@ class MainPage(QMainWindow):
         self.title_label.setFont(QFont('Arial', 10, QFont.Bold))
 
         # 最小化按钮
-        self.minimize_button = self.header_button_model(1080, 0, "picture/minimize.png", self.showMinimized)
+        self.minimize_button = MainUIServlet.header_button_model(self, 1080, 0, "picture/minimize.png", self.showMinimized)
 
         # 关闭按钮
-        self.close_button = self.header_button_model(1140, 0, "picture/close.png", self.close)
-
-    # 最小化和关闭按钮模板
-    def header_button_model(self, x, y, picture_path, callback=None):
-        button = QPushButton(self.central_widget)
-        button.setGeometry(x, y, 60, 40)
-        button.setIcon(QIcon(picture_path))
-        if callback:
-            button.clicked.connect(callback)
-        button.setStyleSheet("""
-            QPushButton {
-                border-radius: 10px;  /* 圆角 */
-                border: none;  /* 去掉边框 */
-                background-color: transparent;
-            }
-            QPushButton:hover {
-                background-color: white;  /* 悬停时背景透明 */
-            }
-        """)
-        return button
+        self.close_button = MainUIServlet.header_button_model(self, 1140, 0, "picture/close.png", self.close)
 
     # 左侧区域
     def create_left_area(self):
-        self.main_page_button = self.left_area_button_model(
-            0, 40, "picture/MainPage.png", "主页", lambda: self.show_main_frame()
+        self.main_page_button = MainUIServlet.left_area_button_model(
+            self, 0, 40, "picture/MainPage.png", "主页", lambda: self.show_main_frame()
         )
-        self.help_page_button = self.left_area_button_model(
-            0, 120, "picture/help.png", "使用指南", lambda: self.show_help_frame()
+        self.help_page_button = MainUIServlet.left_area_button_model(
+            self, 0, 120, "picture/help.png", "使用指南", lambda: self.show_help_frame()
         )
-        self.start_button = self.left_area_button_model(
-            0, 760, "picture/launch.png", "启动游戏", lambda: self.launch_game()
+        self.wiki_button = MainUIServlet.left_area_button_model(
+            self, 0, 200, "picture/wiki.png", "打开wiki", lambda: self.open_wiki()
         )
-        self.setting_page_button = self.left_area_button_model(
-            0, 840, "picture/install.png", "设置", lambda: self.show_setting_frame()
+        self.start_button = MainUIServlet.left_area_button_model(
+            self, 0, 760, "picture/launch.png", "启动游戏", lambda: self.launch_game()
         )
-
-    # 左侧区域按钮模板
-    def left_area_button_model(self, x, y, icon_path, text, callback=None):
-        button = QToolButton(self.central_widget)
-        button.setGeometry(x, y, 80, 80)
-        button.setIcon(QIcon(icon_path))
-        button.setIconSize(QSize(50, 50))
-        button.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
-        button.setText(text)
-        button.setStyleSheet("""
-            QToolButton {
-                padding-left: 5px;
-                border-radius: 0px;  /* 圆角 */
-                background-color: rgba(255, 255, 255, 255);  /* 背景颜色 */
-            }
-            QToolButton:hover { 
-            }
-        """)
-        if callback:
-            button.clicked.connect(callback)
-        return button
+        self.setting_page_button = MainUIServlet.left_area_button_model(
+            self, 0, 840, "picture/install.png", "设置", lambda: self.show_setting_frame()
+        )
 
     # 主界面(右侧界面)
     def create_main_frame(self):
@@ -166,44 +141,22 @@ class MainPage(QMainWindow):
         font = QFont()
         font.setPointSize(12)
         font.setBold(True)
-        self.all_process_button = self.right_area_button_model(
-            70, 630, "picture/AllProcess.jpg", "完整运行",
+        self.all_process_button = MainUIServlet.right_area_button_model(
+            self, 70, 630, "picture/AllProcess.jpg", "完整运行",
             lambda: self.complete_execution()
         )
-        self.clean_hp_button = self.right_area_button_model(
-            320, 630, "picture/CleanHP.jpg", "清理体力",
+        self.clean_hp_button = MainUIServlet.right_area_button_model(
+            self, 320, 630, "picture/CleanHP.jpg", "清理体力",
             lambda: self.clean_hp()
         )
-        self.company_button = self.right_area_button_model(
-            570, 630, "picture/Company.jpg", "派遣公司",
+        self.company_button = MainUIServlet.right_area_button_model(
+            self, 570, 630, "picture/Company.jpg", "派遣公司",
             lambda: self.dispatch_company()
         )
-        self.bowu_button = self.right_area_button_model(
-            820, 630, "picture/BoWU.jpg", "易物所和任务领取",
+        self.bowu_button = MainUIServlet.right_area_button_model(
+            self, 820, 630, "picture/BoWU.jpg", "博物研学",
             lambda: self.bowu()
         )
-
-    # 右侧区域按钮模板
-    def right_area_button_model(self, x, y, icon_path, text, callback=None):
-        button = QToolButton(self.main_frame)
-        button.setGeometry(x, y, 200, 240)
-        button.setIcon(QIcon(icon_path))
-        button.setIconSize(QSize(200, 200))
-        button.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
-        button.setText(text)
-        if callback:
-            button.clicked.connect(callback)
-        # 设置样式表，禁用悬停效果
-        button.setStyleSheet("""
-            QToolButton {
-                border: none;  /* 去掉边框 */
-                background-color: white;
-            }
-            QToolButton:hover {
-                background-color: white;
-            }
-        """)
-        return button
 
     # ui初始化
     def setup_ui(self):
@@ -336,6 +289,12 @@ class MainPage(QMainWindow):
                  }
              """)
 
+    # 打开wiki
+    def open_wiki(self):
+        url = "https://wiki.biligame.com/whmx/%E9%A6%96%E9%A1%B5"
+        # 方式3：在新标签页中打开（如果浏览器支持）
+        webbrowser.open_new_tab(url)
+
     # 启动并进入游戏
     def launch_game(self):
         global stop_thread
@@ -346,8 +305,17 @@ class MainPage(QMainWindow):
             time.sleep(1)
         if stop_thread is True:
             time.sleep(1)
+            self.raise_()  # 让窗口置顶
+            self.activateWindow()  # 激活窗口
+            time.sleep(1)
             QMessageBox.information(self, '', '进程已停止', QMessageBox.Ok)
         print("启动游戏")
+        if Path.exe_path == "":
+            self.raise_()  # 让窗口置顶
+            self.activateWindow()  # 激活窗口
+            time.sleep(1)
+            QMessageBox.information(self, '', '模拟器路径为空，进程已停止', QMessageBox.Ok)
+            return
         subprocess.Popen(Path.exe_path)
         self.start_button.setEnabled(False)
         time.sleep(1)
@@ -380,10 +348,16 @@ class MainPage(QMainWindow):
                 QMessageBox.information(self, '', '启动游戏成功！', QMessageBox.Ok)
                 return
             # 检测游戏是否需要更新
-
+            if times >= 5 and click_update() is True:
+                self.raise_()  # 让窗口置顶
+                self.activateWindow()  # 激活窗口
+                time.sleep(1)
+                QMessageBox.information(self, '', '检测到游戏需要更新，进程已停止', QMessageBox.Ok)
+                return
+            time.sleep(1)
             # 2560 1440
             pyautogui.click(ScreenSize.width * 0.81, ScreenSize.height * 0.229)
-            time.sleep(2)
+            time.sleep(1)
             if JudgeMainPage():
                 time.sleep(1)
                 print("启动游戏成功！")
@@ -395,57 +369,101 @@ class MainPage(QMainWindow):
             time.sleep(2)
             click_check_close()
             times += 1
+        self.raise_()  # 让窗口置顶
+        self.activateWindow()  # 激活窗口
+        time.sleep(1)
         QMessageBox.information(self, '', '启动游戏失败，进程已停止', QMessageBox.Ok)
 
     # 完整运行
     def complete_execution(self):
+        if Path.exe_path == "":
+            self.raise_()  # 让窗口置顶
+            self.activateWindow()  # 激活窗口
+            time.sleep(1)
+            QMessageBox.information(self, '', '模拟器路径为空，进程已停止', QMessageBox.Ok)
+        subprocess.Popen(Path.exe_path)
         global stop_thread, is_complete_execution
         is_complete_execution = True
         stop_thread = False
         for i in range(3):
             if stop_thread is True:
+                self.raise_()  # 让窗口置顶
+                self.activateWindow()  # 激活窗口
+                time.sleep(1)
                 QMessageBox.information(self, '', '进程已停止', QMessageBox.Ok)
                 return
             time.sleep(1)
         # 检查是否在主界面
+        print("检查是否在主界面")
         if JudgeMainPage() is False:
+            self.raise_()  # 让窗口置顶
+            self.activateWindow()  # 激活窗口
+            time.sleep(1)
             QMessageBox.information(self, '', '请将游戏打开到主界面再启动脚本，进程已停止', QMessageBox.Ok)
             return
-        if CompleteSetting.company is True and stop_thread is False:
+        if CompleteSetting.state_dict["company"] is True and stop_thread is False:
+            print("dispatch_company")
             self.dispatch_company()
             time.sleep(3)
             if JudgeMainPage() is False:
+                self.raise_()  # 让窗口置顶
+                self.activateWindow()  # 激活窗口
+                time.sleep(1)
                 QMessageBox.information(self, '', '脚本运行异常，错误函数：dispatch_company，进程已停止', QMessageBox.Ok)
                 return
-        if CompleteSetting.cleanhp is True and stop_thread is False:
+        if CompleteSetting.state_dict["cleanhp"] is True and stop_thread is False:
             self.clean_hp()
             time.sleep(3)
             if JudgeMainPage() is False:
+                self.raise_()  # 让窗口置顶
+                self.activateWindow()  # 激活窗口
+                time.sleep(1)
                 QMessageBox.information(self, '', '脚本运行异常，错误函数：clean_hp，进程已停止', QMessageBox.Ok)
                 return
-        if CompleteSetting.yiwusuo is True and stop_thread is False:
+        if CompleteSetting.state_dict["yiwusuo"] is True and stop_thread is False:
             self.yiwusuo()
             time.sleep(3)
             if JudgeMainPage() is False:
+                self.raise_()  # 让窗口置顶
+                self.activateWindow()  # 激活窗口
+                time.sleep(1)
                 QMessageBox.information(self, '', '脚本运行异常，错误函数：yiwusuo，进程已停止', QMessageBox.Ok)
                 return
-        if CompleteSetting.task is True and stop_thread is False:
+        if  CompleteSetting.state_dict["task"] is True and stop_thread is False:
             self.get_task()
             time.sleep(3)
             if JudgeMainPage() is False:
+                self.raise_()  # 让窗口置顶
+                self.activateWindow()  # 激活窗口
+                time.sleep(1)
                 QMessageBox.information(self, '', '脚本运行异常，错误函数：get_task，进程已停止', QMessageBox.Ok)
                 return
-        if CompleteSetting.youli is True and stop_thread is False:
+        if  CompleteSetting.state_dict["shop"] is True and stop_thread is False:
             self.youli()
             time.sleep(3)
             if JudgeMainPage() is False:
+                self.raise_()  # 让窗口置顶
+                self.activateWindow()  # 激活窗口
+                time.sleep(1)
                 QMessageBox.information(self, '', '脚本运行异常，错误函数：youli，进程已停止', QMessageBox.Ok)
                 return
-        if CompleteSetting.shop is True and stop_thread is False:
+        if  CompleteSetting.state_dict["youli"]is True and stop_thread is False:
             self.shop()
             time.sleep(3)
             if JudgeMainPage() is False:
+                self.raise_()  # 让窗口置顶
+                self.activateWindow()  # 激活窗口
+                time.sleep(1)
                 QMessageBox.information(self, '', '脚本运行异常，错误函数：shop，进程已停止', QMessageBox.Ok)
+                return
+        if  CompleteSetting.state_dict["waiqin"]is True and stop_thread is False:
+            self.waiqin()
+            time.sleep(3)
+            if JudgeMainPage() is False:
+                self.raise_()  # 让窗口置顶
+                self.activateWindow()  # 激活窗口
+                time.sleep(1)
+                QMessageBox.information(self, '', '脚本运行异常，错误函数：waiqin，进程已停止', QMessageBox.Ok)
                 return
         is_complete_execution = False
         self.raise_()  # 让窗口置顶
@@ -468,7 +486,12 @@ class MainPage(QMainWindow):
         print("派遣公司")
         subprocess.Popen(Path.exe_path)  # 打开游戏界面
         time.sleep(1)
-        if ReturnMainPage() is True:
+        # 检查是否在主界面
+        print("检查是否在主界面")
+        if JudgeMainPage() is False:
+            QMessageBox.information(self, '', '请将游戏打开到主界面再启动脚本，进程已停止', QMessageBox.Ok)
+            return
+        else:
             time.sleep(2.5)
         EntryCompany()
         time.sleep(5)
@@ -521,14 +544,190 @@ class MainPage(QMainWindow):
             time.sleep(1)
         subprocess.Popen(Path.exe_path)  # 打开游戏界面
         time.sleep(1)
-        self.yiwusuo()
-        time.sleep(1)
-        self.get_task()
-        if is_complete_execution is False:
+        # 检查是否在主界面
+        print("检查是否在主界面")
+        if JudgeMainPage() is False:
             self.raise_()  # 让窗口置顶
             self.activateWindow()  # 激活窗口
             time.sleep(1)
-            QMessageBox.information(self, '', '脚本运行结束', QMessageBox.Ok)
+            QMessageBox.information(self, '', '请将游戏打开到主界面再启动脚本，进程已停止', QMessageBox.Ok)
+            return
+        # 操作开始, 进入博物研学关卡
+        click_bowu()
+        time.sleep(0.5)
+        pyautogui.click(ScreenSize.width * 0.49, ScreenSize.height * 0.3125)
+        time.sleep(1)
+        click_jinyinjixing()
+        time.sleep(0.5)
+        click_zhuti()
+        time.sleep(0.5)
+        if continue_yanxue() is True:
+            time.sleep(1)
+        else:
+            click_qicheng()
+            time.sleep(0.5)
+            choose_boss()
+            time.sleep(0.5)
+            choose_diffculty()
+            time.sleep(0.5)
+            add_role()
+            time.sleep(0.5)
+            #选择角色 width=2560, height=1440
+            pyautogui.click(ScreenSize.width * 0.45, ScreenSize.height * 0.3125)
+            time.sleep(0.5)
+            pyautogui.click(ScreenSize.width * 0.45, ScreenSize.height * 0.659)
+            time.sleep(0.5)
+            pyautogui.click(ScreenSize.width * 0.527, ScreenSize.height * 0.29)
+            time.sleep(0.5)
+            pyautogui.click(ScreenSize.width * 0.527, ScreenSize.height * 0.625)
+            time.sleep(0.5)
+            click_ok()
+            time.sleep(0.5)
+            choose_fuzhu()
+            time.sleep(0.5)
+            entry_yanxue()
+            time.sleep(3)
+        # 进行关卡挂机
+        self.bowu_level_strategy()
+
+    # 博物研学关卡策略
+    def bowu_level_strategy(self):
+        # 策略：先补满队伍的人
+        for i in range(20):
+            time.sleep(2)
+            own_position = get_own_position()
+            print(f"own_position = {own_position}")
+            if own_position is None:
+                self.raise_()  # 让窗口置顶
+                self.activateWindow()  # 激活窗口
+                time.sleep(1)
+                QMessageBox.information(self, '', 'own_position为空，进程已停止', QMessageBox.Ok)
+                return
+            if own_position[0] > ScreenSize.width * 0.5:
+                print("需要滑动窗口：")
+                target_x = own_position[0] - 200
+                target_y = own_position[1]
+                pyautogui.mouseDown(x=own_position[0], y=own_position[1], button='left')
+                # 可选：添加短暂延迟，确保鼠标按下动作完成
+                time.sleep(0.1)
+                pyautogui.moveTo(target_x, target_y, duration=0.2)
+                pyautogui.mouseUp(button='left')
+            time.sleep(1)
+            if click_role() is True:
+                print("选择添加角色：")
+                time.sleep(1)
+                # 点击添加角色
+                click_ok2()
+                time.sleep(0.5)
+                add_role2()
+                time.sleep(0.5)
+                pyautogui.click(ScreenSize.width * 0.45, ScreenSize.height * 0.3125)
+                time.sleep(1)
+                click_ok()
+                time.sleep(1)
+                # 点击确认
+                click_ok3()
+                time.sleep(1)
+                BoWu.roles += 1
+                continue
+            if click_battle() is True:
+                print("选择战斗：")
+                time.sleep(1)
+                click_ok2()
+                time.sleep(1)
+                enter_battleUI()
+                time.sleep(15)
+                for j in range(6):
+                    time.sleep(3)
+                    if click_start_battle() is True:
+                        print("成功开始战斗")
+                        break
+                for k in range(100):
+                    time.sleep(5)
+                    if click_ok4() is True:
+                        break
+                    else:
+                        print(f"还在战斗中{k}")
+                time.sleep(5)
+                pyautogui.click(ScreenSize.width * 0.5, ScreenSize.height * 0.5)
+                time.sleep(0.5)
+                click_ok5()
+                time.sleep(1)
+                click_ok5()
+                continue
+            if click_hardBattle() is True:
+                print("选择精英战：")
+                time.sleep(1)
+                click_ok2()
+                time.sleep(3)
+                enter_battleUI()
+                for j in range(6):
+                    time.sleep(3)
+                    if click_start_battle() is True:
+                        print("成功开始战斗")
+                        break
+                for k in range(100):
+                    time.sleep(5)
+                    if click_ok4() is True:
+                        break
+                    else:
+                        print(f"还在战斗中{k}")
+                time.sleep(5)
+                pyautogui.click(ScreenSize.width * 0.5, ScreenSize.height * 0.5)
+                time.sleep(1)
+                click_ok5()
+                time.sleep(1)
+                pyautogui.click(ScreenSize.width * 0.5, ScreenSize.height * 0.5)
+                time.sleep(1)
+                click_ok5()
+                time.sleep(1)
+                pyautogui.click(ScreenSize.width * 0.5, ScreenSize.height * 0.5)
+                time.sleep(1)
+                click_ok5()
+                continue
+            if click_rest() is True:
+                print("选择休息：")
+                time.sleep(1)
+                click_ok2()
+                time.sleep(1)
+                click_ok5()
+                time.sleep(1)
+                continue
+            if click_boss() is True:
+                print("选择boss战：")
+                time.sleep(1)
+                click_ok2()
+                time.sleep(3)
+                enter_battleUI()
+                for j in range(6):
+                    time.sleep(3)
+                    if click_start_battle() is True:
+                        print("成功开始战斗")
+                        break
+                for k in range(100):
+                    time.sleep(5)
+                    if click_ok4() is True:
+                        break
+                    else:
+                        print(f"还在战斗中{k}")
+                time.sleep(3)
+                finish_yanxue()
+                time.sleep(2)
+                click_reward()
+                time.sleep(1)
+                get_reward()
+                time.sleep(1)
+                pyautogui.click(ScreenSize.width * 0.515, ScreenSize.height * 0.29)
+                time.sleep(1)
+                pyautogui.click(ScreenSize.width * 0.515, ScreenSize.height * 0.29)
+                ReturnMainPage()
+                time.sleep(1)
+                self.raise_()  # 让窗口置顶
+                self.activateWindow()  # 激活窗口
+                time.sleep(1)
+                QMessageBox.information(self, '', '博物研学挂机结束', QMessageBox.Ok)
+                return
+
 
     # 易物所
     def yiwusuo(self):
@@ -701,6 +900,30 @@ class MainPage(QMainWindow):
         # 1200 400（空白处）
         pyautogui.click(ScreenSize.width * 0.469, ScreenSize.height * 0.156)
         Back()
+
+    # 外勤
+    def waiqin(self):
+        global stop_thread
+        stop_thread = False
+        for i in range(3):
+            if stop_thread is True:
+                QMessageBox.information(self, '', '进程已停止', QMessageBox.Ok)
+                return
+            time.sleep(1)
+        ClickYanXun()
+        time.sleep(1)
+        enter_waiqin()
+        time.sleep(1)
+        if zhengzaiwaiqin() is True:
+            time.sleep(1)
+            ReturnMainPage()
+            return
+        start_waiqin()
+        time.sleep(1)
+        WaiQin.click_ok()
+        time.sleep(1.5)
+        ReturnMainPage()
+
 
 
 if __name__ == "__main__":

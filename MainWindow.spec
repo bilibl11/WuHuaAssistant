@@ -64,5 +64,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='WuHua Assistant v1.3',
+    name='WuHua Assistant v1.4',
 )
